@@ -13,7 +13,6 @@ import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.util.Log;
-import androidx.annotation.RequiresApi;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -50,7 +49,6 @@ import com.rt.printerlibrary.setting.TextSetting;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import org.json.JSONException;
 
@@ -456,7 +454,6 @@ public class CapacitorThermalPrinterPlugin extends Plugin implements PrinterObse
         call.resolve();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @PluginMethod
     public void image(PluginCall call) {
         String image = call.getString("image");
@@ -465,20 +462,19 @@ public class CapacitorThermalPrinterPlugin extends Plugin implements PrinterObse
 
         try {
             if (image != null) {
-                byte[] d = Base64.getDecoder().decode(image.substring(image.indexOf(",") + 1));
+                byte[] d = decodeBase64Compat(image.substring(image.indexOf(",") + 1));
                 cmd.append(cmd.getBitmapCmd(bitmapSetting, BitmapFactory.decodeByteArray(d, 0, d.length)));
             }
         } catch (SdkException ignored) {}
         call.resolve();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @PluginMethod
     public void raw(PluginCall call) {
         String base64 = call.getString("data");
         if (base64 != null) {
             try {
-                cmd.append(Base64.getDecoder().decode(base64));
+                cmd.append(decodeBase64Compat(base64));
             } catch (Exception ignored) {
                 call.reject("Invalid Base64");
                 return;
@@ -682,6 +678,18 @@ public class CapacitorThermalPrinterPlugin extends Plugin implements PrinterObse
         }
 
         return array;
+    }
+
+    private byte[] decodeBase64Compat(String data) {
+        if (data == null) {
+            return new byte[0];
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return java.util.Base64.getDecoder().decode(data);
+        }
+
+        return android.util.Base64.decode(data, android.util.Base64.DEFAULT);
     }
 
     @SuppressLint("MissingPermission")
