@@ -465,7 +465,11 @@ public class CapacitorThermalPrinterPlugin extends Plugin implements PrinterObse
                 byte[] d = decodeBase64Compat(image.substring(image.indexOf(",") + 1));
                 cmd.append(cmd.getBitmapCmd(bitmapSetting, BitmapFactory.decodeByteArray(d, 0, d.length)));
             }
-        } catch (SdkException ignored) {}
+        } catch (SdkException ignored) {
+        } catch (IllegalArgumentException e) {
+            call.reject("Invalid Base64 image data");
+            return;
+        }
         call.resolve();
     }
 
